@@ -13,12 +13,12 @@ type ConnectionDetails = {
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
-
 // don't cache the results
 export const revalidate = 0;
 
 export async function POST(req: Request) {
   try {
+    console.log(API_KEY,API_SECRET,LIVEKIT_URL)
     if (LIVEKIT_URL === undefined) {
       throw new Error('LIVEKIT_URL is not defined');
     }
