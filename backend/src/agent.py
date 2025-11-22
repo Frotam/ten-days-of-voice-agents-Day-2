@@ -1,4 +1,7 @@
 import logging
+import os
+import json
+import datetime
 
 from dotenv import load_dotenv
 from livekit.agents import (
@@ -12,8 +15,8 @@ from livekit.agents import (
     cli,
     metrics,
     tokenize,
-    # function_tool,
-    # RunContext
+    function_tool,
+    RunContext,
 )
 from livekit.plugins import murf, silero, google, deepgram, noise_cancellation
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
@@ -26,28 +29,77 @@ load_dotenv(".env.local")
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
-            instructions="""You are a helpful voice AI assistant. The user is interacting with you via voice, even if you perceive the conversation as text.
-            You eagerly assist users with their questions by providing information from your extensive knowledge.
-            Your responses are concise, to the point, and without any complex formatting or punctuation including emojis, asterisks, or other symbols.
-            You are curious, friendly, and have a sense of humor.""",
+            instructions="""You are a friendly Starbucks barista. The user will place a drink order by speaking.
+            Your job is to ask concise clarifying questions until the following order state is fully filled:
+            {
+              "drinkType": "string",
+              "size": "string",
+              "milk": "string",
+              "extras": ["string"],
+              "name": "string"
+            }
+            Ask one clear question at a time to obtain missing fields. Confirm the full order once complete, then save the order to disk and tell the user it was saved.
+            Keep a friendly, helpful tone and avoid complex formatting.""",
         )
 
-    # To add tools, use the @function_tool decorator.
-    # Here's an example that adds a simple weather tool.
-    # You also have to add `from livekit.agents import function_tool, RunContext` to the top of this file
-    # @function_tool
-    # async def lookup_weather(self, context: RunContext, location: str):
-    #     """Use this tool to look up current weather information in the given location.
-    #
-    #     If the location is not supported by the weather service, the tool will indicate this. You must tell the user the location's weather is unavailable.
-    #
-    #     Args:
-    #         location: The location to look up weather information for (e.g. city name)
-    #     """
-    #
-    #     logger.info(f"Looking up weather for {location}")
-    #
-    #     return "sunny with a temperature of 70 degrees."
+        # Initialize a small order state that we will fill via tools
+        self.order_state = {
+            "drinkType": "",
+            "size": "",
+            "milk": "",
+            "extras": [],
+            "name": "",
+        }
+
+    @function_tool
+    async def update_order(self, context: RunContext, field: str, value: str):
+        """Update a specific field of the order.
+
+        Args:
+            field: One of 'drinkType', 'size', 'milk', 'extras', 'name'
+            value: The value to set. For 'extras', a comma-separated string will be split into list items.
+
+        Returns:
+            A short status string describing what changed and any remaining missing fields, or a saved-file confirmation when complete.
+        """
+
+        allowed = {"drinkType", "size", "milk", "extras", "name"}
+        if field not in allowed:
+            return f"Unknown field '{field}'. Allowed fields: {', '.join(sorted(allowed))}."
+
+        if field == "extras":
+            # Accept a comma-separated list, or a single extra
+            extras = [e.strip() for e in value.split(",") if e.strip()]
+            if extras:
+                self.order_state["extras"].extend(extras)
+        else:
+            self.order_state[field] = value.strip()
+
+        # Determine missing fields (extras must have at least one item)
+        missing = [f for f in ["drinkType", "size", "milk", "extras", "name"] if not self.order_state.get(f)]
+        if self.order_state.get("extras") == [] and "extras" not in missing:
+            missing.append("extras")
+
+        if not missing:
+            # Order complete: save to JSON file
+            orders_dir = os.path.join(os.getcwd(), "backend", "orders")
+            os.makedirs(orders_dir, exist_ok=True)
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(orders_dir, f"order_{timestamp}.json")
+            try:
+                with open(filename, "w", encoding="utf-8") as f:
+                    json.dump(self.order_state, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                return f"Order complete but failed to save: {e}"
+
+            return f"Order complete and saved to {filename}."
+
+        return f"Updated '{field}'. Missing fields: {', '.join(missing)}."
+
+    @function_tool
+    async def get_order(self, context: RunContext):
+        """Return the current order state as JSON-serializable dict."""
+        return self.order_state
 
 
 def prewarm(proc: JobProcess):
