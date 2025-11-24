@@ -3,8 +3,7 @@ import os
 import json
 import datetime
 import asyncio
-import urllib.request
-import urllib.error
+from typing import Optional, List, Dict
 # test
 from dotenv import load_dotenv
 from livekit.agents import (
@@ -30,287 +29,346 @@ load_dotenv(".env.local")
 
 
 class Assistant(Agent):
-    def __init__(self, last_entry: dict | None = None) -> None:
-        # Build a concise, grounded system prompt that references the last entry if available
-        if last_entry:
-            # Keep the system prompt deterministic and concise; mention the user's last energy as a cue
-            last_energy = last_entry.get("energy", "")
-            last_mood = last_entry.get("mood", "")
-            last_ref = (
-                f'At session start, briefly reference the last check-in: "Last time you said your energy was {last_energy} — how is it today?"'
-            )
-        else:
-            last_ref = 'If no prior check-ins exist, open with a neutral: "Hi — how are you feeling today?"'
+    def __init__(self) -> None:
+        # Preferred Murf voice specs (use dicts with voice_id/style/model)
+        self.VOICE_MATTHEW = {"voice_id": "Matthew", "style": "Conversation", "model": "Falcon"}
+        self.VOICE_ALICIA = {"voice_id": "Alicia", "style": "Conversation", "model": "Falcon"}
+        self.VOICE_KEN = {"voice_id": "Ken", "style": "Conversation", "model": "Falcon"}
 
         super().__init__(
             instructions=(
-                "You are a grounded, supportive health & wellness voice companion.\n"
-                "Run a brief daily check-in: ask one clear question at a time. Focus on mood, energy, any stressors, and 1-3 simple intentions for the day.\n"
-                "Do NOT give medical diagnoses or make clinical claims — provide compassionate, realistic, non-diagnostic support.\n"
-                "If the user is feeling stressed or low over the mood ask why he is feeling sad or stressed depending over his mood"
-                "Offer one small, practical suggestion after objectives are set (e.g., take a 5-minute walk, break a task into a 10-minute step, take a short break).\n"
-                "At the end, provide a short recap: today's mood summary, the 1-3 objectives, and ask 'Does this sound right?'.\n"
-                "Persist completed check-ins to a JSON log file, and reference the last check-in when appropriate.\n"
-                + last_ref
+                "You are a concise, helpful teaching assistant designed for a 'Teach-the-Tutor' learning experience.\n"
+                "Support three modes: 'learn' (explain a concept), 'quiz' (ask questions), and 'teach_back' (prompt the user to explain the concept back and provide qualitative feedback).\n"
+                "Do NOT provide medical or legal advice. Keep explanations short, clear, and focused on the concept summary provided by the course content file.\n"
+                "When asked to switch modes, change behavior accordingly. Use small, concrete examples where helpful.\n"
             )
         )
 
-        # Initialize a small check-in state that we will fill via tools
-        self.checkin_state = {
-            "mood": "",
-            "energy": "",
-            "stressors": "",
-            "objectives": [],
-            "summary": "",
-            "datetime": "",
-        }
-
-    @function_tool
-    async def update_order(self, context: RunContext, field: str, value: str):
-        """Update a specific field of the current check-in.
-
-        Args:
-            field: One of 'mood', 'energy', 'stressors', 'objectives', 'summary'
-            value: The value to set. For 'objectives', a comma-separated string will be split into a list.
-
-        Returns:
-            A short status string describing what changed and any remaining required fields.
-        """
-
-        allowed = {"mood", "energy", "stressors", "objectives", "summary"}
-        if field not in allowed:
-            return f"Unknown field '{field}'. Allowed fields: {', '.join(sorted(allowed))}."
-
-        if field == "objectives":
-            objs = [o.strip() for o in value.split(",") if o.strip()]
-            if objs:
-                # replace objectives with the provided list (intentional)
-                self.checkin_state["objectives"] = objs
-        else:
-            self.checkin_state[field] = value.strip()
-
-        # Required fields for a minimal check-in: mood and at least one objective
-        missing = []
-        if not self.checkin_state.get("mood"):
-            missing.append("mood")
-        if not self.checkin_state.get("objectives"):
-            missing.append("objectives")
-
-        if not missing:
-            # All required fields present in memory; do NOT write to disk yet.
-            return (
-                f"Updated '{field}'. All required fields present in memory."
-                " I will wait for you to confirm the recap before saving."
-            )
-
-        return f"Updated '{field}'. Missing required fields: {', '.join(missing)}."
-
-    @function_tool
-    async def get_order(self, context: RunContext):
-        """Return the current check-in state as JSON-serializable dict."""
-        return self.checkin_state
-
-    @function_tool
-    async def save_checkin(self, context: RunContext):
-        """(Deprecated) kept for compatibility — use `finalize_checkin` instead."""
-        return "Use finalize_checkin to confirm and save the check-in."
-
-    @function_tool
-    async def finalize_checkin(self, context: RunContext, confirm: bool = True):
-        """Finalize the in-memory check-in: validate required fields, generate a summary and a small suggestion,
-        and append the completed entry to `backend/wellness_log.json` using an atomic write and a simple lock.
-
-        Args:
-            confirm: boolean indicating user confirmation. If False, abort and return a message.
-
-        Returns:
-            A confirmation string describing the saved entry or why it was not saved.
-        """
-
-        if not confirm:
-            return "Check-in confirmation not received; nothing was saved."
-
-        # Validate required fields
-        missing = []
-        if not self.checkin_state.get("mood"):
-            missing.append("mood")
-        if not self.checkin_state.get("objectives"):
-            missing.append("objectives")
-        if missing:
-            return f"Cannot finalize — missing required fields: {', '.join(missing)}."
-
-        entry = {
-            "datetime": datetime.datetime.now().isoformat(),
-            "mood": self.checkin_state.get("mood", ""),
-            "energy": self.checkin_state.get("energy", ""),
-            "stressors": self.checkin_state.get("stressors", ""),
-            "objectives": self.checkin_state.get("objectives", []),
-        }
-
-        # Generate summary if not provided
-        if not self.checkin_state.get("summary"):
-            mood = entry["mood"] or "unspecified mood"
-            energy = entry["energy"] or "unspecified energy"
-            objs = entry["objectives"]
-            obj_text = ", ".join(objs[:3]) if objs else "no objectives"
-            entry["summary"] = f"Mood: {mood}; Energy: {energy}; Objectives: {obj_text}."
-        else:
-            entry["summary"] = self.checkin_state.get("summary")
-
-        # Generate a small, grounded suggestion (non-clinical)
-        suggestion = "Consider a short, concrete action: take a 5-minute walk or break a task into a 10-minute step."
-        energy_lower = (entry.get("energy") or "").lower()
-        if "low" in energy_lower or "tired" in energy_lower:
-            suggestion = "Your energy sounds low — a short 5-minute walk or a brief rest could help."
-        elif entry.get("stressors"):
-            suggestion = "If you're feeling stressed, try a 2-minute grounding breath or a short break."
-
-        entry["suggestion"] = suggestion
-
-        # Append atomically with a simple lock
-        filename = os.path.join(os.getcwd(), "backend", "wellness_log.json")
-        lockfile = filename + ".lock"
-        tmpfile = filename + ".tmp"
-
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-        # Acquire simple lock by creating a lockfile (O_EXCL ensures atomic create)
-        start = datetime.datetime.now()
-        timeout_sec = 5
-        got_lock = False
-        while (datetime.datetime.now() - start).total_seconds() < timeout_sec:
-            try:
-                fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                os.close(fd)
-                got_lock = True
-                break
-            except FileExistsError:
-                # Another process likely writing; wait briefly
-                await asyncio.sleep(0.05)
-        if not got_lock:
-            return "Could not acquire file lock to save check-in; please try again shortly."
-
+        # Tutor-specific state
+        self.mode: Optional[str] = None  # 'learn' | 'quiz' | 'teach_back'
+        self.current_concept: Optional[dict] = None
+        self.content: List[Dict] = []
+        # Track progress through sample questions for each concept (avoid repeats until exhausted)
+        self.question_progress: Dict[str, int] = {}
+        # Load small course content file if present
         try:
-            # Read existing data safely
-            try:
-                if os.path.exists(filename):
-                    with open(filename, "r", encoding="utf-8") as f:
+            content_path = os.path.join(os.getcwd(), "shared-data", "day4_tutor_content.json")
+            if os.path.exists(content_path):
+                with open(content_path, "r", encoding="utf-8") as f:
+                    self.content = json.load(f)
+        except Exception:
+            self.content = []
+
+        # Mastery tracking filename
+        self.mastery_file = os.path.join(os.getcwd(), "backend", "tutor_mastery.json")
+
+    # (Removed wellness check-in functions and Notion integration — this assistant focuses on tutor modes.)
+
+    # ------------------ Tutor tools ------------------
+    @function_tool
+    async def list_concepts(self, context: RunContext):
+        """Return the list of available concepts (id and title)."""
+        return [{"id": c.get("id"), "title": c.get("title")} for c in self.content]
+
+    @function_tool
+    async def set_mode(self, context: RunContext, mode: str):
+        """Set the tutor mode: 'learn', 'quiz', or 'teach_back'."""
+        mode = (mode or "").strip().lower()
+        if mode not in {"learn", "quiz", "teach_back"}:
+            return f"Unknown mode '{mode}'. Choose 'learn', 'quiz', or 'teach_back'."
+        self.mode = mode
+        # Immediately apply the voice for this mode and keep it until mode changes
+        try:
+            # Map modes to voice specs
+            mode_voice = None
+            if mode == "learn":
+                mode_voice = self.VOICE_MATTHEW
+            elif mode == "quiz":
+                mode_voice = self.VOICE_ALICIA
+            elif mode == "teach_back":
+                mode_voice = self.VOICE_KEN
+
+            if mode_voice is not None:
+                # Attempt to set voice on the running session if available
+                await self._apply_mode_voice(context, mode_voice)
+        except Exception:
+            # ignore failures; voice switching is best-effort
+            pass
+
+        return f"Mode set to {mode}."
+
+    async def _apply_mode_voice(self, context: Optional[RunContext], voice_spec):
+        """Apply the voice for the current mode and record it so we don't switch until mode changes."""
+        # Store current mode voice for reference
+        self._mode_voice = voice_spec
+        # If we have a live context/session, set the TTS voice now
+        try:
+            await self._ensure_voice(context, voice_spec)
+        except Exception:
+            pass
+
+    @function_tool
+    async def choose_concept(self, context: RunContext, concept_id: str):
+        """Select a concept by id to use in next interactions."""
+        for c in self.content:
+            if c.get("id") == concept_id:
+                self.current_concept = c
+                # Initialize question progress pointer for this concept if needed
+                if concept_id not in self.question_progress:
+                    self.question_progress[concept_id] = 0
+                return {"status": "ok", "concept": c}
+        return {"status": "error", "message": f"Concept '{concept_id}' not found."}
+
+    @function_tool
+    async def explain_concept(self, context: RunContext):
+        """Return the summary text for the current concept (learn mode).
+
+        Includes the preferred Murf voice for Learn mode.
+        """
+        if not self.current_concept:
+            return {"error": "No concept selected. Use choose_concept first."}
+        # Do NOT switch voice here — voice is mode-locked via `set_mode`
+        return {"text": self.current_concept.get("summary")}
+
+    @function_tool
+    async def ask_quiz_question(self, context: RunContext):
+        """Return a quiz question (sample_question) for the current concept.
+
+        Includes preferred Murf voice for Quiz mode.
+        """
+        if not self.current_concept:
+            return {"error": "No concept selected. Use choose_concept first."}
+        # Voice must NOT be switched here — voice is mode-locked via `set_mode`.
+        # Use a list of sample questions if available; ensure we don't repeat until all are used
+        questions = self.current_concept.get("sample_questions") or [self.current_concept.get("sample_question")]
+        concept_id = self.current_concept.get("id")
+        idx = self.question_progress.get(concept_id, 0)
+        if idx < len(questions):
+            question = questions[idx]
+            # advance pointer so next call returns the next question
+            self.question_progress[concept_id] = idx + 1
+            # If this is the very first quiz question (pointer was 0), include an announcement
+            announcement = None
+            if idx == 0 and self.mode == "quiz":
+                announcement = f"Initiating quiz — your first question is: {question}"
+                # Return the announcement and the question; caller can speak the announcement then the question
+            return {"question": question, "remaining": len(questions) - (idx + 1), "announcement": announcement}
+        else:
+            # All sample questions used for this concept
+            return {"question": None, "message": "You have gone through all sample questions for this concept."}
+
+    @function_tool
+    async def evaluate_quiz_answer(self, context: RunContext, user_response: str):
+        """Evaluate the user's answer to the last quiz question.
+
+        Uses a simple keyword-overlap heuristic against the concept summary. If the
+        answer is considered correct, the assistant returns the next question. If
+        incorrect, it explains the correct answer (using the concept summary) and
+        then offers the next question. Voice must NOT be switched here; mode-locked
+        voice is enforced via `set_mode`.
+        """
+        if not self.current_concept:
+            return {"error": "No concept selected. Use choose_concept first."}
+
+        concept_id = self.current_concept.get("id")
+        # The last asked question index is pointer-1 because ask_quiz_question increments after selecting
+        last_idx = self.question_progress.get(concept_id, 0) - 1
+        questions = self.current_concept.get("sample_questions") or [self.current_concept.get("sample_question")]
+        if last_idx < 0 or last_idx >= len(questions):
+            return {"error": "No quiz question has been asked yet. Call ask_quiz_question first."}
+
+        # Simple keyword extraction from the concept summary
+        reference = (self.current_concept.get("summary") or "").lower()
+        response = (user_response or "").lower()
+
+        def keywords(text: str):
+            import re
+
+            words = re.findall(r"\b[a-z]{4,}\b", text)
+            return set(words)
+
+        ref_keys = keywords(reference)
+        resp_keys = keywords(response)
+        if not ref_keys:
+            score = 0.0
+        else:
+            matched = len(ref_keys & resp_keys)
+            score = matched / max(1, len(ref_keys))
+
+        correct_threshold = 0.5
+        if score >= correct_threshold:
+            # Correct: prepare next question
+            next_q = await self.ask_quiz_question(context)
+            if next_q.get("question"):
+                return {"correct": True, "message": "Correct! Here's your next question:", "next": next_q}
+            else:
+                return {"correct": True, "message": "Correct! You have completed the questions for this concept.", "next": next_q}
+        else:
+            # Incorrect: explain using the concept summary, then proceed to next question
+            explanation = self.current_concept.get("summary")
+            next_q = await self.ask_quiz_question(context)
+            return {"correct": False, "explanation": explanation, "next": next_q}
+
+    @function_tool
+    async def evaluate_teach_back(self, context: RunContext, user_response: str):
+        """Evaluate a user's teach-back response with a simple keyword-overlap heuristic,
+        save a mastery record, and return qualitative feedback.
+        Preferred Murf voice for teach_back return is Ken.
+        """
+        if not self.current_concept:
+            return {"error": "No concept selected. Use choose_concept first."}
+
+        reference = (self.current_concept.get("summary") or "").lower()
+        response = (user_response or "").lower()
+
+        # Simple keyword extraction: remove punctuation, split, take unique words longer than 3 chars
+        def keywords(text: str):
+            import re
+
+            words = re.findall(r"\b[a-z]{4,}\b", text)
+            return set(words)
+
+        ref_keys = keywords(reference)
+        resp_keys = keywords(response)
+        if not ref_keys:
+            score = 0.0
+        else:
+            matched = len(ref_keys & resp_keys)
+            score = matched / max(1, len(ref_keys))
+
+        # Map score to qualitative feedback
+        if score >= 0.75:
+            feedback = "Great explanation — you covered the main ideas clearly."
+        elif score >= 0.4:
+            feedback = "A decent start — you touched on some key points. Try elaborating one or two parts."
+        else:
+            feedback = "Thanks for trying — I'd like you to include more of the core ideas. Would you try explaining X next?"
+
+        # Save mastery record
+        record = {
+            "datetime": datetime.datetime.now().isoformat(),
+            "concept_id": self.current_concept.get("id"),
+            "mode": "teach_back",
+            "score": round(score, 3),
+        }
+        try:
+            os.makedirs(os.path.dirname(self.mastery_file), exist_ok=True)
+            if os.path.exists(self.mastery_file):
+                with open(self.mastery_file, "r", encoding="utf-8") as f:
+                    try:
                         data = json.load(f)
                         if not isinstance(data, list):
                             data = []
-                else:
-                    data = []
-            except Exception:
-                data = []
-
-            data.append(entry)
-
-            # Write to temp file then atomically replace
-            try:
-                with open(tmpfile, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                os.replace(tmpfile, filename)
-            finally:
-                if os.path.exists(tmpfile):
-                    try:
-                        os.remove(tmpfile)
                     except Exception:
-                        pass
-        finally:
-            # Release lock
-            try:
-                os.remove(lockfile)
-            except Exception:
-                pass
-
-        # Attempt to push objectives to Notion if integration is configured
-        notion_msg = ""
-        try:
-            notion_token = os.getenv("NOTION_TOKEN")
-            notion_page = os.getenv("NOTION_TODO_PAGE_ID")
-            if notion_token and notion_page and entry.get("objectives"):
-                try:
-                    res = await asyncio.to_thread(self._push_objectives_to_notion_sync, entry.get("objectives"))
-                    notion_msg = " Notion: " + res
-                except Exception as e:
-                    notion_msg = f" Notion push failed: {e}"
+                        data = []
+            else:
+                data = []
+            data.append(record)
+            tmp = self.mastery_file + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, self.mastery_file)
         except Exception:
-            notion_msg = ""
+            pass
 
-        # Reset in-memory checkin
-        self.checkin_state = {
-            "mood": "",
-            "energy": "",
-            "stressors": "",
-            "objectives": [],
-            "summary": "",
-            "datetime": "",
-        }
+        # Ensure TTS uses Ken for teach-back feedback
+        await self._ensure_voice(context, self.VOICE_KEN)
+        return {"voice": self.VOICE_KEN, "feedback": feedback, "score": score}
 
-        return f"Check-in saved to {filename}. Summary: {entry['summary']} Suggestion: {suggestion}" + notion_msg
+    async def _ensure_voice(self, context: Optional[RunContext], voice):
+        """Try multiple strategies to switch the runtime TTS voice to `voice`.
 
-    def _push_objectives_to_notion_sync(self, objectives: list):
-        """Synchronous helper to append objectives as to-do blocks to a Notion page.
-
-        Requires environment variables: NOTION_TOKEN and NOTION_TODO_PAGE_ID (a page ID to append to).
-        Uses the Notion blocks children append endpoint.
+        This sets the voice on `context.session.tts` if available and supports `set_voice`,
+        or falls back to assigning a `.voice` attribute. It also stores `self._requested_voice`
+        so callers can inspect which voice was requested.
         """
-
-        token = os.getenv("NOTION_TOKEN")
-        page_id = os.getenv("NOTION_TODO_PAGE_ID")
-        if not token or not page_id:
-            raise RuntimeError("NOTION_TOKEN and NOTION_TODO_PAGE_ID must be set to push to Notion.")
-
-        url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json",
-        }
-
-        children = []
-        for obj in objectives:
-            children.append({
-                "object": "block",
-                "type": "to_do",
-                "to_do": {
-                    "text": [{"type": "text", "text": {"content": obj}}],
-                    "checked": False,
-                },
-            })
-
-        payload = json.dumps({"children": children}).encode("utf-8")
-
-        req = urllib.request.Request(url, data=payload, headers=headers, method="PATCH")
+        self._requested_voice = voice
+        if context is None:
+            return
         try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                resp_body = resp.read().decode("utf-8")
-                return "Objectives pushed to Notion."
-        except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8") if hasattr(e, 'read') else str(e)
-            raise RuntimeError(f"Notion API error: {e.code} {body}")
-        except Exception as e:
-            raise RuntimeError(f"Notion request failed: {e}")
-
-    @function_tool
-    async def get_last_checkin(self, context: RunContext):
-        """Return the last saved check-in (or an empty dict)."""
-
-        filename = os.path.join(os.getcwd(), "backend", "wellness_log.json")
-        if not os.path.exists(filename):
-            return {}
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, list) and data:
-                    return data[-1]
+            # Preferred: context.session.tts.set_voice (works with DynamicMurf)
+            session = getattr(context, "session", None)
+            if session is not None:
+                tts = getattr(session, "tts", None)
+                if tts is not None:
+                    # call set_voice in thread if blocking
+                    try:
+                        # if it's async-capable, call directly
+                        maybe = tts.set_voice
+                        if asyncio.iscoroutinefunction(maybe):
+                            await maybe(voice)
+                        else:
+                            # run blocking call in thread to avoid blocking event loop
+                            await asyncio.to_thread(maybe, voice)
+                        return
+                    except Exception:
+                        # fallback to attribute set
+                        try:
+                            # if voice is a dict, set voice attribute to voice_id
+                            if isinstance(voice, dict):
+                                setattr(tts, "voice", voice.get("voice_id"))
+                            else:
+                                setattr(tts, "voice", voice)
+                            return
+                        except Exception:
+                            return
         except Exception:
-            return {}
-        return {}
+            return
+
 
 
 def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
+
+
+class DynamicMurf:
+    """Simple proxy wrapper around murf.TTS that allows swapping voice at runtime.
+
+    This recreates an internal murf.TTS instance when `set_voice` is called.
+    It forwards attribute access and method calls to the current instance.
+    """
+
+    def __init__(self, voice=None, **kwargs):
+        # voice can be a string voice id or a dict with keys {voice_id, style, model}
+        self._kwargs = dict(kwargs)
+        self._voice_spec = None
+        if isinstance(voice, dict):
+            self._voice_spec = voice
+            voice_id = voice.get("voice_id")
+            mk = dict(self._kwargs)
+            if "style" in voice:
+                mk["style"] = voice.get("style")
+            if "model" in voice:
+                mk["model"] = voice.get("model")
+            self._voice = voice_id
+            self._impl = murf.TTS(voice=voice_id, **mk)
+        else:
+            self._voice = voice
+            self._impl = murf.TTS(voice=voice, **self._kwargs)
+
+    def set_voice(self, voice):
+        # Accept either a string voice id or a voice spec dict
+        if isinstance(voice, dict):
+            voice_id = voice.get("voice_id")
+            if voice_id == self._voice:
+                return
+            self._voice_spec = voice
+            mk = dict(self._kwargs)
+            if "style" in voice:
+                mk["style"] = voice.get("style")
+            if "model" in voice:
+                mk["model"] = voice.get("model")
+            self._voice = voice_id
+            self._impl = murf.TTS(voice=voice_id, **mk)
+        else:
+            if voice == self._voice:
+                return
+            self._voice_spec = None
+            self._voice = voice
+            self._impl = murf.TTS(voice=voice, **self._kwargs)
+
+    def __getattr__(self, item):
+        return getattr(self._impl, item)
 
 
 async def entrypoint(ctx: JobContext):
@@ -332,11 +390,10 @@ async def entrypoint(ctx: JobContext):
             ),
         # Text-to-speech (TTS) is your agent's voice, turning the LLM's text into speech that the user can hear
         # See all available models as well as voice selections at https://docs.livekit.io/agents/models/tts/
-        tts=murf.TTS(
-                voice="en-US-matthew", 
-                style="Conversation",
+        tts=DynamicMurf(
+                voice={"voice_id": "Matthew", "style": "Conversation", "model": "Falcon"},
                 tokenizer=tokenize.basic.SentenceTokenizer(min_sentence_len=2),
-                text_pacing=True
+                text_pacing=True,
             ),
         # VAD and turn detection are used to determine when the user is speaking and when the agent should respond
         # See more at https://docs.livekit.io/agents/build/turns
@@ -381,19 +438,8 @@ async def entrypoint(ctx: JobContext):
     # await avatar.start(session, room=ctx.room)
 
     # Start the session, which initializes the voice pipeline and warms up the models
-    # Read the last check-in (if any) so the agent can reference it at session start
-    last_entry = {}
-    try:
-        filename = os.path.join(os.getcwd(), "backend", "wellness_log.json")
-        if os.path.exists(filename):
-            with open(filename, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, list) and data:
-                    last_entry = data[-1]
-    except Exception:
-        last_entry = {}
-
-    assistant = Assistant(last_entry=last_entry)
+    # Instantiate the tutor assistant (no wellness check-ins)
+    assistant = Assistant()
 
     await session.start(
         agent=assistant,

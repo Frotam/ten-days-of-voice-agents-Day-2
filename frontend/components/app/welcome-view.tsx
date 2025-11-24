@@ -34,13 +34,12 @@ export const WelcomeView = ({
         <WelcomeImage />
 
         <h1 className="text-foreground max-w-prose pt-1 leading-7 font-semibold text-2xl">
-          Health & Wellness Voice Companion
+          Active Recall Coach
         </h1>
 
         <p className="text-foreground max-w-prose pt-3 leading-6 font-medium">
-          A brief, grounded daily check-in to notice your mood and energy, set 1–3 simple intentions,
-          and get a small, practical suggestion to help you move forward. Non-diagnostic and supportive.
-        </p>
+          The active recall coach that learns from the user and tracks concept-level mastery as the user teaches concepts back to it.
+          </p>
 
         <Button variant="primary" size="lg" onClick={onStartCall} className="mt-6 w-64 font-mono">
           {startButtonText}
@@ -49,16 +48,16 @@ export const WelcomeView = ({
 
       <div className="fixed bottom-5 left-0 flex w-full items-center justify-center">
         <p className="text-muted-foreground max-w-prose pt-1 text-xs leading-5 font-normal text-pretty md:text-sm">
-          New here? Learn how to get the most from daily check-ins in the{' '}
-          <a
+         {' '}
+          {/* <a
             target="_blank"
             rel="noopener noreferrer"
             href="https://docs.livekit.io/agents/start/voice-ai/"
             className="underline"
           >
             quickstart guide
-          </a>
-          .
+          </a> */}
+          
         </p>
       </div>
     </div>

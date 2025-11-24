@@ -1,0 +1,42 @@
+[
+  {
+    "id": "variables",
+    "title": "Variables",
+    "summary": "Variables store values so you can reuse them later. They let you name data and change it during program execution. Use descriptive names and be mindful of scope and naming conventions.",
+    "sample_questions": [
+      "What is a variable and why is it useful?",
+      "Give an example of a variable name and the value it might hold.",
+      "How does scope affect a variable's lifetime?"
+    ]
+  },
+  {
+    "id": "loops",
+    "title": "Loops",
+    "summary": "Loops let you repeat an action multiple times without copying code. For example, for-loops iterate a known number of times; while-loops run until a condition changes. Loops can help process lists, accumulate results, and automate repetition.",
+    "sample_questions": [
+      "Explain the difference between a for loop and a while loop.",
+      "When would you use a loop instead of writing repeated code?",
+      "What is an infinite loop and how can you avoid it?"
+    ]
+  },
+  {
+    "id": "functions",
+    "title": "Functions",
+    "summary": "Functions group reusable code into a named block that can be called with different inputs. They help organize programs, reduce duplication, and make behavior reusable and testable.",
+    "sample_questions": [
+      "What is a function and why use one?",
+      "How do parameters and return values work in a function?",
+      "Give an example of extracting repeated code into a function."
+    ]
+  },
+  {
+    "id": "conditionals",
+    "title": "Conditionals",
+    "summary": "Conditionals let a program make decisions using statements like 'if', 'else if', and 'else'. They control flow by running different code paths depending on conditions.",
+    "sample_questions": [
+      "What does an 'if' statement do?",
+      "How can you use 'else' and 'elif' (or 'else if') to handle multiple cases?",
+      "Why is order important when checking multiple conditions?"
+    ]
+  }
+]
