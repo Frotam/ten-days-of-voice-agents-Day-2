@@ -30,41 +30,225 @@ load_dotenv(".env.local")
 
 class Assistant(Agent):
     def __init__(self) -> None:
-        # Preferred Murf voice specs (use dicts with voice_id/style/model)
-        self.VOICE_MATTHEW = {"voice_id": "Matthew", "style": "Conversation", "model": "Falcon"}
-        self.VOICE_ALICIA = {"voice_id": "Alicia", "style": "Conversation", "model": "Falcon"}
-        self.VOICE_KEN = {"voice_id": "Ken", "style": "Conversation", "model": "Falcon"}
+        # SDR voice spec (single professional voice for SDR interactions)
+        self.VOICE_SDR = {"voice_id": "Alicia", "style": "Conversation", "model": "Falcon"}
 
         super().__init__(
             instructions=(
-                "You are a concise, helpful teaching assistant designed for a 'Teach-the-Tutor' learning experience.\n"
-                "Support three modes: 'learn' (explain a concept), 'quiz' (ask questions), and 'teach_back' (prompt the user to explain the concept back and provide qualitative feedback).\n"
-                "Do NOT provide medical or legal advice. Keep explanations short, clear, and focused on the concept summary provided by the course content file.\n"
-                "When asked to switch modes, change behavior accordingly. Use small, concrete examples where helpful.\n"
+                "You are a warm, professional Sales Development Representative (SDR) for Razorpay, an Indian fintech platform.\n"
+                "Your role is to:\n"
+                "1. Greet visitors warmly and make them feel welcomed.\n"
+                "2. Ask what brought them here and understand their needs.\n"
+                "3. Answer questions about Razorpay's products, features, and pricing using the company FAQ.\n"
+                "4. When appropriate, naturally ask for lead information: name, company, email, role, use case, team size, and timeline.\n"
+                "5. Keep the conversation friendly, conversational, and focused on helping them.\n"
+                "6. If asked something you're unsure about, offer to connect them with the right team.\n"
+                "7. When the user indicates they're done (e.g., 'That's all', 'I'm done', 'Thanks'), summarize the conversation and confirm next steps.\n"
+                "Remember: Be helpful, not pushy. Listen more than you talk. Use simple, clear language.\n"
             )
         )
 
-        # Tutor-specific state
-        self.mode: Optional[str] = None  # 'learn' | 'quiz' | 'teach_back'
-        self.current_concept: Optional[dict] = None
-        self.content: List[Dict] = []
-        # Track progress through sample questions for each concept (avoid repeats until exhausted)
-        self.question_progress: Dict[str, int] = {}
-        # Load small course content file if present
+        # SDR-specific state
+        self.company_data: Dict = {}
+        self.lead: Dict = {
+            "name": None,
+            "company": None,
+            "email": None,
+            "role": None,
+            "use_case": None,
+            "team_size": None,
+            "timeline": None,
+        }
+        self.call_summary: Optional[str] = None
+        
+        # Load company content (Razorpay FAQ and product info)
         try:
-            content_path = os.path.join(os.getcwd(), "shared-data", "day4_tutor_content.json")
+            content_path = os.path.join(os.getcwd(), "shared-data", "sdr_company_content.json")
             if os.path.exists(content_path):
                 with open(content_path, "r", encoding="utf-8") as f:
-                    self.content = json.load(f)
+                    self.company_data = json.load(f)
         except Exception:
-            self.content = []
+            self.company_data = {}
 
-        # Mastery tracking filename
-        self.mastery_file = os.path.join(os.getcwd(), "backend", "tutor_mastery.json")
+        # Leads file for storing captured leads
+        self.leads_file = os.path.join(os.getcwd(), "backend", "leads.json")
 
-    # (Removed wellness check-in functions and Notion integration — this assistant focuses on tutor modes.)
+    # ==================== SDR Tools ====================
 
-    # ------------------ Tutor tools ------------------
+    @function_tool
+    async def answer_faq(self, context: RunContext, question: str):
+        """Search the Razorpay FAQ for a relevant answer.
+        
+        Uses simple keyword matching to find the best FAQ entry.
+        Returns the answer if found, otherwise returns a suggestion to contact the team.
+        """
+        if not self.company_data or "faq" not in self.company_data:
+            return {"answer": "I don't have FAQ data loaded. Let me connect you with our team."}
+        
+        faq_list = self.company_data.get("faq", [])
+        question_lower = (question or "").lower()
+        
+        # Simple keyword matching: find the FAQ entry with most keyword overlap
+        best_match = None
+        best_score = 0
+        
+        for entry in faq_list:
+            q = (entry.get("question", "") or "").lower()
+            # Count overlapping words
+            q_words = set(q.split())
+            question_words = set(question_lower.split())
+            overlap = len(q_words & question_words)
+            if overlap > best_score:
+                best_score = overlap
+                best_match = entry
+        
+        if best_match and best_score > 0:
+            return {"answer": best_match.get("answer", ""), "source": "FAQ"}
+        else:
+            return {"answer": "That's a great question! Let me get you in touch with our team for detailed information.", "source": "escalation"}
+
+    @function_tool
+    async def reset_lead(self, context: RunContext):
+        """Reset the current lead capture state for a new conversation."""
+        self.lead = {k: None for k in self.lead}
+        self.call_summary = None
+        return {"status": "ok", "message": "Lead state reset."}
+
+    @function_tool
+    async def greet(self, context: RunContext):
+        """Return a warm greeting and an initial question to start the conversation."""
+        greeting = (
+            f"Hi! I'm an SDR from {self.company_data.get('company', {}).get('name', 'Razorpay')}. "
+            "Thanks for stopping by — what brought you here today?"
+        )
+        # Suggest next field to collect (usually name)
+        next_q = await self.next_lead_question(context)
+        return {"greeting": greeting, "next": next_q}
+
+    @function_tool
+    async def capture_lead_field(self, context: RunContext, field_name: str, field_value: str):
+        """Capture a single lead field during the conversation.
+        
+        Stores the value in the current lead dictionary.
+        Supported fields: name, company, email, role, use_case, team_size, timeline.
+        """
+        field_name = (field_name or "").strip().lower()
+        if field_name not in self.lead:
+            return {"status": "error", "message": f"Unknown field '{field_name}'. Supported: name, company, email, role, use_case, team_size, timeline."}
+
+        self.lead[field_name] = field_value
+
+        # After storing, determine the next field to ask
+        next_info = await self.next_lead_question(context)
+        # If all fields collected, finalize and save
+        if not next_info.get("field"):
+            summary = await self.summarize_call(context)
+            return {"status": "ok", "field": field_name, "value": field_value, "message": f"Got it, storing your {field_name}.", "next": None, "summary": summary}
+
+        return {"status": "ok", "field": field_name, "value": field_value, "message": f"Got it, storing your {field_name}.", "next": next_info}
+
+    @function_tool
+    async def next_lead_question(self, context: RunContext):
+        """Return the next lead field and a natural question to ask for it.
+
+        Fields order: name, company, email, role, use_case, team_size, timeline
+        """
+        order = ["name", "company", "email", "role", "use_case", "team_size", "timeline"]
+        prompts = {
+            "name": "May I have your full name?",
+            "company": "Which company are you with?",
+            "email": "What's the best email to reach you at?",
+            "role": "What's your role or title?",
+            "use_case": "Briefly, what would you like to use Razorpay for?",
+            "team_size": "How large is your team?",
+            "timeline": "What's your timeline to get started? (now / soon / later)",
+        }
+
+        for f in order:
+            if not self.lead.get(f):
+                return {"field": f, "prompt": prompts.get(f)}
+
+        return {"field": None, "prompt": None, "message": "All lead fields collected."}
+
+    @function_tool
+    async def detect_call_end(self, context: RunContext, user_message: str):
+        """Detect if the user is indicating the end of the call.
+        
+        Looks for keywords like 'done', 'thanks', 'goodbye', 'that's all', etc.
+        Returns True if end-of-call is detected, False otherwise.
+        """
+        end_keywords = ["done", "thanks", "thank you", "goodbye", "bye", "that's all", "thats all", "no more questions", 
+                        "that's it", "thats it", "i'm good", "im good", "all set", "that's enough", "thats enough"]
+        
+        msg_lower = (user_message or "").lower().strip()
+        for keyword in end_keywords:
+            if keyword in msg_lower:
+                return {"call_end": True, "reason": f"Detected '{keyword}'"}
+        
+        return {"call_end": False}
+
+    @function_tool
+    async def summarize_call(self, context: RunContext):
+        """Generate a summary of the call and save the lead to JSON.
+        
+        Called at the end of a conversation. Stores all collected lead information.
+        """
+        # If no lead data collected, do not save an empty record
+        if not any(self.lead.values()):
+            return {"summary": "No lead information collected.", "lead_saved": False, "message": "No lead fields were provided; nothing saved."}
+
+        # Build summary
+        summary_parts = []
+        summary_parts.append("Here's what we captured:")
+        
+        if self.lead.get("name"):
+            summary_parts.append(f"Name: {self.lead['name']}")
+        if self.lead.get("company"):
+            summary_parts.append(f"Company: {self.lead['company']}")
+        if self.lead.get("role"):
+            summary_parts.append(f"Role: {self.lead['role']}")
+        if self.lead.get("use_case"):
+            summary_parts.append(f"Use case: {self.lead['use_case']}")
+        if self.lead.get("team_size"):
+            summary_parts.append(f"Team size: {self.lead['team_size']}")
+        if self.lead.get("timeline"):
+            summary_parts.append(f"Timeline: {self.lead['timeline']}")
+        
+        summary_text = " ".join(summary_parts)
+        
+        # Save to leads.json
+        lead_record = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "company": self.company_data.get("company", {}).get("name", "Razorpay"),
+            **self.lead
+        }
+        
+        try:
+            os.makedirs(os.path.dirname(self.leads_file), exist_ok=True)
+            # Load existing leads if present
+            if os.path.exists(self.leads_file):
+                with open(self.leads_file, "r", encoding="utf-8") as f:
+                    try:
+                        leads_data = json.load(f)
+                        if not isinstance(leads_data, list):
+                            leads_data = []
+                    except Exception:
+                        leads_data = []
+            else:
+                leads_data = []
+            
+            leads_data.append(lead_record)
+            
+            # Atomic write
+            tmp = self.leads_file + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(leads_data, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, self.leads_file)
+        except Exception as e:
+            logger.error(f"Failed to save lead: {e}")
+        
+        self.call_summary = summary_text
+        return {"summary": summary_text, "lead_saved": True, "message": "Thanks for chatting with us! Our team will reach out soon."}
     @function_tool
     async def list_concepts(self, context: RunContext):
         """Return the list of available concepts (id and title)."""
@@ -177,7 +361,7 @@ class Assistant(Agent):
         if last_idx < 0 or last_idx >= len(questions):
             return {"error": "No quiz question has been asked yet. Call ask_quiz_question first."}
 
-        # Simple keyword extraction from the concept summary
+ 
         reference = (self.current_concept.get("summary") or "").lower()
         response = (user_response or "").lower()
 
