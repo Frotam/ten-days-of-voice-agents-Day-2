@@ -34,11 +34,13 @@ export const WelcomeView = ({
         <WelcomeImage />
 
         <h1 className="text-foreground max-w-prose pt-1 leading-7 font-semibold text-2xl">
-          Simple FAQ SDR + Lead Capture AI Assistant 
+          Fraud Alert Voice Agent
         </h1>
 
         <p className="text-foreground max-w-prose pt-3 leading-6 font-medium">
-          Sales Development Representative (SDR) that can answer basic company questions and then generate lead (potential customer details) and summary data at the end of the call.</p>
+          {/* Sales Development Representative (SDR) that can answer basic company questions and then generate lead (potential customer details) and summary data at the end of the call.
+           */}
+          </p>
 
         <Button variant="primary" size="lg" onClick={onStartCall} className="mt-6 w-64 font-mono">
           {startButtonText}
