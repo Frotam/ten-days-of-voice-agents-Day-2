@@ -33,8 +33,8 @@ export const WelcomeView = ({
       <section className="bg-background flex flex-col items-center justify-center text-center">
         <WelcomeImage />
 
-        <h1 className="text-foreground max-w-prose pt-1 leading-7 font-semibold text-2xl">
-          Fraud Alert Voice Agent
+        < h1 className="text-foreground max-w-prose pt-1 leading-7 font-semibold text-2xl">
+          Food & Grocery Ordering Voice Agent
         </h1>
 
         <p className="text-foreground max-w-prose pt-3 leading-6 font-medium">

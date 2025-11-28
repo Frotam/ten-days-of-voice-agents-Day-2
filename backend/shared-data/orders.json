@@ -1,0 +1,36 @@
+[
+  {
+    "order_id": "ORD-253875",
+    "timestamp": "2025-11-28T10:34:13.875149",
+    "customer_name": "Sid",
+    "items": [
+      {
+        "item_id": "cheddar_cheese",
+        "name": "Cheddar Cheese",
+        "quantity": 1.0,
+        "unit": "pack",
+        "price_each": 6.49,
+        "subtotal": 6.49
+      },
+      {
+        "item_id": "bread_whole_wheat",
+        "name": "Whole Wheat Bread",
+        "quantity": 1,
+        "unit": "loaf",
+        "price_each": 4.29,
+        "subtotal": 4.29
+      },
+      {
+        "item_id": "peanut_butter",
+        "name": "Peanut Butter",
+        "quantity": 1,
+        "unit": "jar",
+        "price_each": 5.99,
+        "subtotal": 5.99
+      }
+    ],
+    "total": 16.77,
+    "status": "placed",
+    "notes": ""
+  }
+]

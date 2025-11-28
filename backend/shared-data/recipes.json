@@ -1,0 +1,64 @@
+{
+  "recipes": [
+    {
+      "dish": "peanut butter sandwich",
+      "items": ["bread_white", "peanut_butter"],
+      "quantities": [1, 1],
+      "description": "Classic peanut butter sandwich"
+    },
+    {
+      "dish": "whole wheat peanut butter sandwich",
+      "items": ["bread_whole_wheat", "peanut_butter"],
+      "quantities": [1, 1],
+      "description": "Healthier peanut butter sandwich on whole wheat"
+    },
+    {
+      "dish": "spaghetti with marinara sauce",
+      "items": ["pasta", "pasta_sauce"],
+      "quantities": [1, 1],
+      "description": "Classic spaghetti with marinara sauce"
+    },
+    {
+      "dish": "spaghetti for two",
+      "items": ["pasta", "pasta_sauce"],
+      "quantities": [2, 2],
+      "description": "Spaghetti for two people"
+    },
+    {
+      "dish": "pasta dinner",
+      "items": ["pasta", "pasta_sauce", "chicken_breast"],
+      "quantities": [1, 1, 0.5],
+      "description": "Pasta with marinara and grilled chicken"
+    },
+    {
+      "dish": "caprese salad",
+      "items": ["tomato", "cheddar_cheese", "olive_oil", "lettuce"],
+      "quantities": [2, 0.5, 0.5, 1],
+      "description": "Fresh caprese salad with tomato, cheese, and olive oil"
+    },
+    {
+      "dish": "breakfast for two",
+      "items": ["eggs", "milk", "bread_white"],
+      "quantities": [1, 1, 1],
+      "description": "Eggs, milk, and toast for two people"
+    },
+    {
+      "dish": "healthy breakfast",
+      "items": ["yogurt", "orange_juice", "bread_whole_wheat"],
+      "quantities": [1, 1, 1],
+      "description": "Yogurt, fresh orange juice, and whole wheat toast"
+    },
+    {
+      "dish": "quick snack",
+      "items": ["chips", "cookies"],
+      "quantities": [1, 1],
+      "description": "Snack pack with chips and cookies"
+    },
+    {
+      "dish": "movie night",
+      "items": ["pizza_margherita", "chips", "cookies"],
+      "quantities": [1, 1, 1],
+      "description": "Pizza night with snacks"
+    }
+  ]
+}
