@@ -1,0 +1,87 @@
+{
+  "company": {
+    "name": "Razorpay",
+    "tagline": "India's leading fintech platform for payment solutions",
+    "description": "Razorpay is an Indian fintech company that provides payment gateway solutions, banking, and business tools for online merchants, businesses, and financial institutions. We enable seamless payments and financial operations across India.",
+    "founded": "2014",
+    "headquarters": "Bangalore, India",
+    "website": "razorpay.com"
+  },
+  "products": [
+    {
+      "name": "Payment Gateway",
+      "description": "Accept online payments via cards, UPI, wallets, and netbanking with zero setup hassle."
+    },
+    {
+      "name": "Razorpay X",
+      "description": "Modern business banking for SMEs and startups. Current accounts, payroll, and expense management."
+    },
+    {
+      "name": "Razorpay Loans",
+      "description": "Quick working capital loans for businesses. Fast approval and disbursal."
+    },
+    {
+      "name": "Razorpay Analytics",
+      "description": "Real-time insights and reporting dashboard for your business transactions."
+    }
+  ],
+  "faq": [
+    {
+      "question": "What does Razorpay do?",
+      "answer": "Razorpay is India's leading fintech platform providing payment gateway solutions, modern business banking through Razorpay X, quick loans, and advanced analytics. We help businesses accept payments easily and manage their finances."
+    },
+    {
+      "question": "Who is Razorpay for?",
+      "answer": "We serve online merchants, e-commerce businesses, SaaS companies, startups, SMEs, and any business that needs to accept payments or manage their finances efficiently."
+    },
+    {
+      "question": "Do you have a free tier or trial?",
+      "answer": "Yes! You can sign up for free and start accepting payments with our Payment Gateway. We charge a competitive transaction fee of 2% + 10 rupees per payment, with no setup or monthly fees."
+    },
+    {
+      "question": "What payment methods do you support?",
+      "answer": "We support credit cards, debit cards, UPI, digital wallets (Google Pay, Apple Pay, PhonePe), netbanking, and recurring payments for subscriptions."
+    },
+    {
+      "question": "How long does setup take?",
+      "answer": "Setup is quick and easy. You can integrate our payment gateway in minutes using our simple API or ready-made plugins. KYC approval typically takes 1-2 business days."
+    },
+    {
+      "question": "What are your pricing tiers?",
+      "answer": "We offer simple, transparent pricing: 2% + 10 rupees per payment for the Payment Gateway. Razorpay X (business banking) starts at Rs. 500/month. Loan interest rates depend on your business profile and loan amount."
+    },
+    {
+      "question": "Do you offer customer support?",
+      "answer": "Yes! We provide 24/7 support via email, chat, and phone. Our support team helps with integration, troubleshooting, and business questions."
+    },
+    {
+      "question": "Is my data secure?",
+      "answer": "Absolutely. We are PCI-DSS Level 1 certified, comply with RBI regulations, and use bank-grade encryption. Your customer data is never stored on our servers."
+    },
+    {
+      "question": "Can I integrate with my existing system?",
+      "answer": "Yes! We provide REST APIs, webhooks, and ready-made plugins for popular platforms like WordPress, Shopify, WooCommerce, Magento, and custom integrations."
+    },
+    {
+      "question": "What is Razorpay X?",
+      "answer": "Razorpay X is our modern business banking platform offering current accounts, expense management, payroll solutions, and invoice management for businesses of all sizes."
+    }
+  ],
+  "pricing": [
+    {
+      "tier": "Payment Gateway",
+      "cost": "2% + Rs. 10 per transaction",
+      "features": ["Accept all payment methods", "Settlement in 2 hours", "Real-time dashboard", "Webhook support", "No setup fees"]
+    },
+    {
+      "tier": "Razorpay X (Business Banking)",
+      "cost": "From Rs. 500/month",
+      "features": ["Current account with zero balance", "UPI and card payments", "Payroll automation", "Expense management", "Invoice and GST tools"]
+    },
+    {
+      "tier": "Razorpay Loans",
+      "cost": "Competitive interest rates based on profile",
+      "features": ["Quick approval (24 hours)", "Flexible repayment", "Up to Rs. 1 Crore", "No collateral needed"]
+    }
+  ]
+}

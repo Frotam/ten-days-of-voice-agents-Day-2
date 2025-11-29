@@ -1,0 +1,197 @@
+{
+  "store": {
+    "name": "FreshMart Grocery & Foods",
+    "description": "Your one-stop shop for groceries, snacks, and ready-to-eat meals"
+  },
+  "items": [
+    {
+      "id": "bread_white",
+      "name": "White Bread",
+      "category": "Groceries",
+      "price": 3.49,
+      "unit": "loaf",
+      "description": "Fresh white bread loaf",
+      "tags": ["vegetarian", "gluten"]
+    },
+    {
+      "id": "bread_whole_wheat",
+      "name": "Whole Wheat Bread",
+      "category": "Groceries",
+      "price": 4.29,
+      "unit": "loaf",
+      "description": "Nutritious whole wheat bread",
+      "tags": ["vegetarian", "gluten", "high-fiber"]
+    },
+    {
+      "id": "peanut_butter",
+      "name": "Peanut Butter",
+      "category": "Groceries",
+      "price": 5.99,
+      "unit": "jar",
+      "size": "500g",
+      "description": "Creamy peanut butter",
+      "tags": ["vegetarian", "vegan", "protein"]
+    },
+    {
+      "id": "milk",
+      "name": "Whole Milk",
+      "category": "Groceries",
+      "price": 3.99,
+      "unit": "liter",
+      "description": "Fresh whole milk",
+      "tags": ["dairy"]
+    },
+    {
+      "id": "eggs",
+      "name": "Eggs (Dozen)",
+      "category": "Groceries",
+      "price": 4.49,
+      "unit": "dozen",
+      "description": "Fresh eggs, dozen count",
+      "tags": ["protein", "dairy"]
+    },
+    {
+      "id": "pasta",
+      "name": "Spaghetti Pasta",
+      "category": "Groceries",
+      "price": 2.29,
+      "unit": "box",
+      "size": "400g",
+      "description": "Classic spaghetti pasta",
+      "tags": ["vegetarian", "gluten"]
+    },
+    {
+      "id": "pasta_sauce",
+      "name": "Marinara Sauce",
+      "category": "Groceries",
+      "price": 3.79,
+      "unit": "jar",
+      "size": "600ml",
+      "description": "Classic marinara tomato sauce",
+      "tags": ["vegetarian", "vegan"]
+    },
+    {
+      "id": "chicken_breast",
+      "name": "Chicken Breast",
+      "category": "Groceries",
+      "price": 8.99,
+      "unit": "kg",
+      "description": "Fresh chicken breast",
+      "tags": ["protein", "meat"]
+    },
+    {
+      "id": "cheddar_cheese",
+      "name": "Cheddar Cheese",
+      "category": "Groceries",
+      "price": 6.49,
+      "unit": "pack",
+      "size": "200g",
+      "description": "Aged cheddar cheese slices",
+      "tags": ["dairy", "vegetarian"]
+    },
+    {
+      "id": "tomato",
+      "name": "Tomatoes",
+      "category": "Groceries",
+      "price": 2.99,
+      "unit": "kg",
+      "description": "Fresh ripe tomatoes",
+      "tags": ["vegetarian", "vegan", "fresh"]
+    },
+    {
+      "id": "lettuce",
+      "name": "Lettuce (Iceberg)",
+      "category": "Groceries",
+      "price": 2.49,
+      "unit": "head",
+      "description": "Fresh iceberg lettuce",
+      "tags": ["vegetarian", "vegan", "fresh"]
+    },
+    {
+      "id": "olive_oil",
+      "name": "Extra Virgin Olive Oil",
+      "category": "Groceries",
+      "price": 9.99,
+      "unit": "bottle",
+      "size": "500ml",
+      "description": "Premium extra virgin olive oil",
+      "tags": ["vegetarian", "vegan", "cooking"]
+    },
+    {
+      "id": "chips",
+      "name": "Potato Chips",
+      "category": "Snacks",
+      "price": 2.49,
+      "unit": "bag",
+      "size": "100g",
+      "description": "Crispy salted potato chips",
+      "tags": ["vegetarian", "vegan", "snack"]
+    },
+    {
+      "id": "cookies",
+      "name": "Chocolate Chip Cookies",
+      "category": "Snacks",
+      "price": 3.99,
+      "unit": "pack",
+      "size": "250g",
+      "description": "Delicious chocolate chip cookies",
+      "tags": ["vegetarian", "snack"]
+    },
+    {
+      "id": "pizza_margherita",
+      "name": "Margherita Pizza (Frozen)",
+      "category": "Prepared Food",
+      "price": 7.99,
+      "unit": "box",
+      "description": "Frozen margherita pizza, ready to bake",
+      "tags": ["vegetarian", "prepared", "frozen"]
+    },
+    {
+      "id": "sandwich_turkey",
+      "name": "Turkey & Cheese Sandwich",
+      "category": "Prepared Food",
+      "price": 6.49,
+      "unit": "each",
+      "description": "Pre-made turkey and cheese sandwich",
+      "tags": ["meat", "prepared", "ready-to-eat"]
+    },
+    {
+      "id": "salad_green",
+      "name": "Green Garden Salad",
+      "category": "Prepared Food",
+      "price": 5.99,
+      "unit": "container",
+      "description": "Fresh mixed green salad with dressing",
+      "tags": ["vegetarian", "vegan", "prepared", "fresh"]
+    },
+    {
+      "id": "yogurt",
+      "name": "Greek Yogurt",
+      "category": "Groceries",
+      "price": 4.49,
+      "unit": "pack",
+      "size": "500g",
+      "description": "Creamy Greek yogurt",
+      "tags": ["dairy", "vegetarian", "protein"]
+    },
+    {
+      "id": "orange_juice",
+      "name": "Fresh Orange Juice",
+      "category": "Groceries",
+      "price": 4.99,
+      "unit": "liter",
+      "description": "Freshly squeezed orange juice",
+      "tags": ["vegetarian", "vegan", "beverage", "fresh"]
+    },
+    {
+      "id": "coffee",
+      "name": "Ground Coffee",
+      "category": "Groceries",
+      "price": 7.49,
+      "unit": "bag",
+      "size": "250g",
+      "description": "Premium ground coffee beans",
+      "tags": ["vegetarian", "vegan", "beverage"]
+    }
+  ]
+}

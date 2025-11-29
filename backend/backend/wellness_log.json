@@ -1,0 +1,47 @@
+[
+  {
+    "datetime": "2025-11-23T21:55:05.037778",
+    "mood": "great",
+    "energy": "moderate",
+    "stressors": "",
+    "objectives": [
+      "put some good for me"
+    ],
+    "summary": "Mood: great; Energy: moderate; Objectives: put some good for me.",
+    "suggestion": "Consider a short, concrete action: take a 5-minute walk or break a task into a 10-minute step."
+  },
+  {
+    "datetime": "2025-11-23T21:57:00.650548",
+    "mood": "moderate",
+    "energy": "",
+    "stressors": "",
+    "objectives": [
+      "cook something good for myself"
+    ],
+    "summary": "Mood: moderate; Energy: unspecified energy; Objectives: cook something good for myself.",
+    "suggestion": "Consider a short, concrete action: take a 5-minute walk or break a task into a 10-minute step."
+  },
+  {
+    "datetime": "2025-11-23T22:15:34.612978",
+    "mood": "good",
+    "energy": "good",
+    "stressors": "work I have done today",
+    "objectives": [
+      "Food for myself"
+    ],
+    "summary": "Mood: good; Energy: good; Objectives: Food for myself.",
+    "suggestion": "Try to Cook something create for your self"
+  },
+  {
+    "datetime": "2025-11-23T23:05:58.287947",
+    "mood": "stressed and nervous",
+    "energy": "",
+    "stressors": "incomplete backlogs and lots of work",
+    "objectives": [
+      "come my work",
+      "complete a bit of backlogs"
+    ],
+    "summary": "Mood: stressed and nervous; Energy: unspecified energy; Objectives: come my work, complete a bit of backlogs.",
+    "suggestion": "If you're feeling stressed, try a 2-minute grounding breath or a short break."
+  }
+]

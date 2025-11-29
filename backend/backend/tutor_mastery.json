@@ -1,0 +1,104 @@
+[
+  {
+    "datetime": "2025-11-24T21:27:48.762862",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.125
+  },
+  {
+    "datetime": "2025-11-24T21:30:03.419457",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.062
+  },
+  {
+    "datetime": "2025-11-24T21:31:29.814583",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.125
+  },
+  {
+    "datetime": "2025-11-24T21:48:06.203968",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.25
+  },
+  {
+    "datetime": "2025-11-24T21:48:17.672252",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.625
+  },
+  {
+    "datetime": "2025-11-24T21:48:19.471256",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.625
+  },
+  {
+    "datetime": "2025-11-24T21:49:27.472059",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.125
+  },
+  {
+    "datetime": "2025-11-24T21:51:08.702944",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.25
+  },
+  {
+    "datetime": "2025-11-24T22:00:44.354927",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.875
+  },
+  {
+    "datetime": "2025-11-24T22:27:47.718746",
+    "concept_id": "functions",
+    "mode": "teach_back",
+    "score": 0.048
+  },
+  {
+    "datetime": "2025-11-24T22:36:31.254066",
+    "concept_id": "variables",
+    "mode": "teach_back",
+    "score": 0.211
+  },
+  {
+    "datetime": "2025-11-24T22:36:46.460720",
+    "concept_id": "variables",
+    "mode": "teach_back",
+    "score": 0.526
+  },
+  {
+    "datetime": "2025-11-24T22:36:51.733216",
+    "concept_id": "variables",
+    "mode": "teach_back",
+    "score": 0.158
+  },
+  {
+    "datetime": "2025-11-24T22:45:30.955785",
+    "concept_id": "variables",
+    "mode": "teach_back",
+    "score": 0.158
+  },
+  {
+    "datetime": "2025-11-24T22:48:40.302930",
+    "concept_id": "loops",
+    "mode": "teach_back",
+    "score": 0.174
+  },
+  {
+    "datetime": "2025-11-24T23:13:28.515588",
+    "concept_id": "variables",
+    "mode": "teach_back",
+    "score": 0.105
+  },
+  {
+    "datetime": "2025-11-24T23:14:16.811947",
+    "concept_id": "variables",
+    "mode": "teach_back",
+    "score": 0.053
+  }
+]

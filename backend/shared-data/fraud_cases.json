@@ -1,0 +1,32 @@
+[
+  {
+    "userName": "Sid",
+    "securityIdentifier": "ABC123",
+    "cardEnding": "**** 4242",
+    "transactionAmount": "Rs. 5,999",
+    "transactionName": "ABC Industry",
+    "transactionTime": "2025-11-25T14:32:00",
+    "transactionCategory": "e-commerce",
+    "transactionSource": "alibaba.com",
+    "location": "Bangalore, India",
+    "securityQuestion": "What is your favourite color?",
+    "securityAnswer": "blue",
+    "status": "confirmed_fraud",
+    "outcome_note": "Customer reported transaction as fraudulent. Card blocked and dispute initiated (mock)."
+  },
+  {
+    "userName": "Ram",
+    "securityIdentifier": "ABC123",
+    "cardEnding": "**** 4242",
+    "transactionAmount": "Rs. 5,999",
+    "transactionName": "ABC Industry",
+    "transactionTime": "2025-11-25T14:32:00",
+    "transactionCategory": "e-commerce",
+    "transactionSource": "alibaba.com",
+    "location": "Bangalore, India",
+    "securityQuestion": "What is your favourite color?",
+    "securityAnswer": "blue",
+    "status": "pending_review",
+    "outcome_note": ""
+  }
+]

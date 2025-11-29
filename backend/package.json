@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@livekit/agents-plugin-livekit": "^1.0.20",
+    "@livekit/agents-plugin-silero": "^1.0.20"
+  }
+}
